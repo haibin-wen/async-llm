@@ -69,3 +69,25 @@
 ---
 
 可能的实现路径见 [IMPLEMENTATION_PATHS.md](./IMPLEMENTATION_PATHS.md)。
+
+---
+
+## 论文拆解
+
+按"内部耦合不可分 + 外部接已有研究线 + 独立可发"切，async-llm 自然落到 2 篇。
+
+### B1. 数据 + 建模
+
+数据怎么表示与模型怎么消费这种数据，是同一研究决策的两面：emit / draft / discard 的 token 化方式、KV cache 中 committed 与 draft 的层级、time / segment embedding、attention mask 选择，全部相互决定。强行先做数据再做模型会出 bug——它们必须在一篇里同时定型。
+
+**接的研究线**：speculative decoding 的 draft / verify 同构；Pause tokens (Goyal et al. 2023)；Quiet-STaR (Stanford 2024)；Coconut (Meta 2024)；ChatML / Toolformer 风格的控制 token 设计。
+
+### B2. 训练算法
+
+在 B1 搭好的表征上，让 emit / discard 决策真正**涌现**而不是随机。研究问题：单一 next-token prediction 是否够、是否要分头预测算 loss、是否用 RL 处理 discard 的 credit assignment、是否课程式从 emit-only 释放到加入 discard。
+
+**接的研究线**：SFT-on-control-tokens；DPO / RLHF；process reward (Lightman, Cobbe)；STaR / V-STaR 这类自我验证 rationale 的训练算法。
+
+---
+
+推理引擎（cache 管理 / 回滚 / draft-commit 隔离）是工程问题，不在这一阶段的研究论文范围。
